@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Recommendation Model</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url("background1.jpg") no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: -1;
+    }
+
+    header {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+
+    .card {
+      background-color: rgba(17, 17, 17, 0.85);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+      transition: transform 0.2s;
+      padding: 1rem;
+    }
+
+    .card:hover {
+      transform: scale(1.05);
+    }
+
+    .card-content h3 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .card-content p {
+      margin: 0.3rem 0;
+      font-size: 0.95rem;
+      color: #ccc;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Recommendation Model</h1>
+  </header>
+
+  <main class="cards" id="productContainer">
+    <!-- Cards will be generated here -->
+  </main>
+
+  <script>
+    async function loadProducts() {
+      try {
+        const response = await fetch("all_electronics.csv");
+        const data = await response.text();
+        const rows = data.trim().split("\n").slice(1); // skip header row
+
+        const container = document.getElementById("productContainer");
+        container.innerHTML = "";
+
+        rows.forEach((row, index) => {
+          const cols = row.split(",");
+
+          // Adjust according to column order:
+          // name, image_link, rating, no_of_reviews, discount_price, actual_price
+          const name = cols[0]?.trim();
+          const rating = cols[2]?.trim();
+          const reviews = cols[3]?.trim();
+          const discount = cols[4]?.trim();
+          const actual = cols[5]?.trim();
+
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="card-content">
+              <h3>${name || "Unnamed Product"}</h3>
+              <p>⭐ Rating: ${rating || "N/A"}</p>
+              <p>💬 Reviews: ${reviews || "0"}</p>
+              <p>💰 Discounted Price: ₹${discount || "-"}</p>
+              <p><s>Actual Price: ₹${actual || "-"}</s></p>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+      } catch (error) {
+        console.error("Error loading CSV:", error);
+      }
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>
