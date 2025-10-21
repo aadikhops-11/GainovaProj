@@ -174,28 +174,33 @@
       }
     }
 
+    function createCard(product) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <img src="${product.image}" alt="${product.name}"
+             onerror="this.onerror=null;this.src='placeholder.png';">
+        <div class="card-content">
+          <h3>${product.name}</h3>
+          <p>⭐ Rating: ${product.rating || "N/A"}</p>
+          <p>👥 Reviews: ${product.numRatings || "0"}</p>
+          <p>💰 Price: ₹${product.discountPrice || "-"}</p>
+          <p><s>₹${product.actualPrice || "-"}</s></p>
+        </div>
+      `;
+      card.addEventListener("click", () => {
+        if (product.link) window.open(product.link, "_blank");
+      });
+      return card;
+    }
+
     function displayProducts() {
       const container = document.getElementById("productContainer");
       const end = Math.min(displayedCount + PRODUCTS_PER_PAGE, allProducts.length);
       const productsToShow = allProducts.slice(displayedCount, end);
 
       productsToShow.forEach(product => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <img src="${product.image}" alt="${product.name}">
-          <div class="card-content">
-            <h3>${product.name}</h3>
-            <p>⭐ Rating: ${product.rating || "N/A"}</p>
-            <p>👥 Reviews: ${product.numRatings || "0"}</p>
-            <p>💰 Price: ₹${product.discountPrice || "-"}</p>
-            <p><s>₹${product.actualPrice || "-"}</s></p>
-          </div>
-        `;
-        card.addEventListener("click", () => {
-          if (product.link) window.open(product.link, "_blank");
-        });
-        container.appendChild(card);
+        container.appendChild(createCard(product));
       });
 
       displayedCount = end;
@@ -214,22 +219,7 @@
       );
 
       filtered.forEach(product => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <img src="${product.image}" alt="${product.name}">
-          <div class="card-content">
-            <h3>${product.name}</h3>
-            <p>⭐ Rating: ${product.rating || "N/A"}</p>
-            <p>👥 Reviews: ${product.numRatings || "0"}</p>
-            <p>💰 Price: ₹${product.discountPrice || "-"}</p>
-            <p><s>₹${product.actualPrice || "-"}</s></p>
-          </div>
-        `;
-        card.addEventListener("click", () => {
-          if (product.link) window.open(product.link, "_blank");
-        });
-        container.appendChild(card);
+        container.appendChild(createCard(product));
       });
 
       document.getElementById("loadMoreBtn").style.display = "none";
