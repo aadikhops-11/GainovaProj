@@ -20,18 +20,48 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0, 0, 0, 0.6);
       z-index: -1;
     }
 
     header {
       text-align: center;
-      padding: 2rem;
+      padding: 1.5rem;
     }
 
     header h1 {
-      font-size: 2.5rem;
+      font-size: 2.2rem;
       font-weight: bold;
+      margin-bottom: 1rem;
+    }
+
+    .search-bar {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .search-bar input {
+      width: 40%;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+    }
+
+    .search-bar button {
+      padding: 0.5rem 1rem;
+      margin-left: 0.5rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #ff9800;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .search-bar button:hover {
+      background-color: #ffa733;
     }
 
     .cards {
@@ -47,16 +77,27 @@
       overflow: hidden;
       box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
       transition: transform 0.2s;
-      padding: 1rem;
+      cursor: pointer;
     }
 
     .card:hover {
       transform: scale(1.05);
     }
 
+    .card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-content {
+      padding: 1rem;
+    }
+
     .card-content h3 {
       margin: 0;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       font-weight: bold;
       color: #fff;
     }
@@ -67,57 +108,134 @@
       color: #ccc;
     }
 
+    .load-more-container {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .load-more {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .load-more:hover {
+      background-color: #66bb6a;
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>Recommendation Model</h1>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search products...">
+      <button onclick="handleSearch()">Search</button>
+    </div>
   </header>
 
-  <main class="cards" id="productContainer">
-    <!-- Cards will be generated here -->
-  </main>
+  <main class="cards" id="productContainer"></main>
+
+  <div class="load-more-container">
+    <button class="load-more" id="loadMoreBtn">Load More</button>
+  </div>
 
   <script>
+    let allProducts = [];
+    let displayedCount = 0;
+    const PRODUCTS_PER_PAGE = 100;
+
     async function loadProducts() {
       try {
         const response = await fetch("all_electronics.csv");
         const data = await response.text();
         const rows = data.trim().split("\n").slice(1); // skip header row
 
-        const container = document.getElementById("productContainer");
-        container.innerHTML = "";
-
-        rows.forEach((row, index) => {
+        allProducts = rows.map(row => {
           const cols = row.split(",");
-
-          // Adjust according to column order:
-          // name, image_link, rating, no_of_reviews, discount_price, actual_price
-          const name = cols[0]?.trim();
-          const rating = cols[2]?.trim();
-          const reviews = cols[3]?.trim();
-          const discount = cols[4]?.trim();
-          const actual = cols[5]?.trim();
-
-          const card = document.createElement("div");
-          card.className = "card";
-          card.innerHTML = `
-            <div class="card-content">
-              <h3>${name || "Unnamed Product"}</h3>
-              <p>⭐ Rating: ${rating || "N/A"}</p>
-              <p>💬 Reviews: ${reviews || "0"}</p>
-              <p>💰 Discounted Price: ₹${discount || "-"}</p>
-              <p><s>Actual Price: ₹${actual || "-"}</s></p>
-            </div>
-          `;
-
-          container.appendChild(card);
+          return {
+            name: cols[0]?.trim(),
+            image: cols[3]?.trim(),
+            link: cols[4]?.trim(),
+            rating: cols[5]?.trim(),
+            numRatings: cols[6]?.trim(),
+            discountPrice: cols[7]?.trim(),
+            actualPrice: cols[8]?.trim(),
+          };
         });
+
+        displayProducts();
       } catch (error) {
         console.error("Error loading CSV:", error);
       }
     }
 
+    function displayProducts() {
+      const container = document.getElementById("productContainer");
+      const end = Math.min(displayedCount + PRODUCTS_PER_PAGE, allProducts.length);
+      const productsToShow = allProducts.slice(displayedCount, end);
+
+      productsToShow.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <img src="${product.image}" alt="${product.name}">
+          <div class="card-content">
+            <h3>${product.name}</h3>
+            <p>⭐ Rating: ${product.rating || "N/A"}</p>
+            <p>👥 Reviews: ${product.numRatings || "0"}</p>
+            <p>💰 Price: ₹${product.discountPrice || "-"}</p>
+            <p><s>₹${product.actualPrice || "-"}</s></p>
+          </div>
+        `;
+        card.addEventListener("click", () => {
+          if (product.link) window.open(product.link, "_blank");
+        });
+        container.appendChild(card);
+      });
+
+      displayedCount = end;
+      if (displayedCount >= allProducts.length) {
+        document.getElementById("loadMoreBtn").style.display = "none";
+      }
+    }
+
+    function handleSearch() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const container = document.getElementById("productContainer");
+      container.innerHTML = "";
+
+      const filtered = allProducts.filter(p =>
+        p.name.toLowerCase().includes(query)
+      );
+
+      filtered.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <img src="${product.image}" alt="${product.name}">
+          <div class="card-content">
+            <h3>${product.name}</h3>
+            <p>⭐ Rating: ${product.rating || "N/A"}</p>
+            <p>👥 Reviews: ${product.numRatings || "0"}</p>
+            <p>💰 Price: ₹${product.discountPrice || "-"}</p>
+            <p><s>₹${product.actualPrice || "-"}</s></p>
+          </div>
+        `;
+        card.addEventListener("click", () => {
+          if (product.link) window.open(product.link, "_blank");
+        });
+        container.appendChild(card);
+      });
+
+      document.getElementById("loadMoreBtn").style.display = "none";
+    }
+
+    document.getElementById("loadMoreBtn").addEventListener("click", displayProducts);
     loadProducts();
   </script>
 </body>
