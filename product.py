@@ -1,0 +1,127 @@
+import streamlit as st
+from urllib.parse import unquote
+
+# -----------------------------
+# Page Config
+# -----------------------------
+st.set_page_config(page_title="Product Details", layout="centered")
+
+# -----------------------------
+# Background Styling
+# -----------------------------
+bg_style = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background: url("background1.jpg");
+    background-size: cover;
+}
+[data-testid="stAppViewContainer"]::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: -1;
+}
+.container {
+    background-color: rgba(17, 17, 17, 0.85);
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 10px rgba(255,255,255,0.1);
+}
+.product-img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+h1 {
+    color: white;
+}
+p {
+    color: #ccc;
+}
+.price {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+}
+.discounted {
+    color: #4caf50;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+.actual {
+    text-decoration: line-through;
+    color: #999;
+    margin-left: 10px;
+}
+.back-btn {
+    background: white;
+    color: black;
+    padding: 0.8rem 1.4rem;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+}
+</style>
+"""
+st.markdown(bg_style, unsafe_allow_html=True)
+
+# -----------------------------
+# Read URL Query Params
+# -----------------------------
+query_params = st.query_params
+
+# Decode URL-encoded text safely
+def get_param(key, default=""):
+    return unquote(query_params.get(key, [default])[0])
+
+product = {
+    "name": get_param("name"),
+    "image": get_param("image"),
+    "rating": get_param("rating"),
+    "reviews": get_param("reviews"),
+    "discounted": get_param("discounted"),
+    "actual": get_param("actual"),
+    "description": get_param("description"),
+}
+
+# -----------------------------
+# Display Product Details
+# -----------------------------
+st.markdown("<div class='container'>", unsafe_allow_html=True)
+
+if product["name"]:
+    # Product Image
+    st.markdown(
+        f"<img src='{product['image']}' class='product-img'>",
+        unsafe_allow_html=True
+    )
+
+    # Product Info
+    st.markdown(f"## {product['name']}")
+    st.markdown(f"⭐ {product['rating']} ({product['reviews']} reviews)")
+
+    st.markdown(
+        f"""
+        <div class='price'>
+            <span class='discounted'>{product['discounted']}</span>
+            <span class='actual'>{product['actual']}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.write(product["description"])
+
+else:
+    st.write("### ❌ No product data available.")
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# -----------------------------
+# Back Button
+# -----------------------------
+st.page_link("index.py", label="← Back to Products", icon="↩️")
