@@ -1,232 +1,131 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Recommendation Model</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: url("background1.jpg") no-repeat center center fixed;
-      background-size: cover;
-      color: #fff;
-      position: relative;
-    }
+import streamlit as st
+import pandas as pd
 
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: -1;
-    }
+# -----------------------------
+# Page Config
+# -----------------------------
+st.set_page_config(page_title="Recommendation Model", layout="wide")
 
-    header {
-      text-align: center;
-      padding: 1.5rem;
-    }
+# Background styling
+page_bg = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background: url("background1.jpg");
+    background-size: cover;
+}
+[data-testid="stAppViewContainer"]::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: -1;
+}
+.card {
+    background-color: rgba(17, 17, 17, 0.85);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(255,255,255,0.15);
+    transition: 0.2s;
+}
+.card:hover {
+    transform: scale(1.03);
+}
+.card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+.card-title {
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: #fff;
+    margin-top: 8px;
+}
+.card-text {
+    color: #ccc;
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+}
+</style>
+"""
+st.markdown(page_bg, unsafe_allow_html=True)
 
-    header h1 {
-      font-size: 2.2rem;
-      font-weight: bold;
-      margin-bottom: 1rem;
-    }
+# -----------------------------
+# Title & Search Bar
+# -----------------------------
+st.markdown("<h1 style='text-align:center; color:white;'>Recommendation Model</h1>", unsafe_allow_html=True)
 
-    .search-bar {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
+query = st.text_input("Search products...", "").lower()
 
-    .search-bar input {
-      width: 40%;
-      padding: 0.5rem;
-      border-radius: 6px;
-      border: none;
-      font-size: 1rem;
-    }
 
-    .search-bar button {
-      padding: 0.5rem 1rem;
-      margin-left: 0.5rem;
-      border: none;
-      border-radius: 6px;
-      background-color: #ff9800;
-      color: white;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: 0.3s;
-    }
+# -----------------------------
+# Load CSV
+# -----------------------------
+@st.cache_data
+def load_data():
+    df = pd.read_csv("all_electronics.csv")
+    df.columns = df.columns.str.strip()
+    return df
 
-    .search-bar button:hover {
-      background-color: #ffa733;
-    }
+df = load_data()
 
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      padding: 2rem;
-    }
+# Ensure placeholder logic
+df["image"] = df["image"].fillna("")
+df["image"] = df["image"].apply(lambda x: x if str(x).strip() != "" else "placeholder.png")
 
-    .card {
-      background-color: rgba(17, 17, 17, 0.85);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
-      transition: transform 0.2s;
-      cursor: pointer;
-    }
+# Apply search filter
+if query:
+    df = df[df["name"].str.lower().str.contains(query)]
 
-    .card:hover {
-      transform: scale(1.05);
-    }
+# -----------------------------
+# Pagination
+# -----------------------------
+PRODUCTS_PER_PAGE = 100
 
-    .card img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
+if "count" not in st.session_state:
+    st.session_state.count = PRODUCTS_PER_PAGE
 
-    .card-content {
-      padding: 1rem;
-    }
+# Slice the dataframe
+subset = df.head(st.session_state.count)
 
-    .card-content h3 {
-      margin: 0;
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #fff;
-    }
+# -----------------------------
+# Display Cards
+# -----------------------------
+cols = st.columns(4)
 
-    .card-content p {
-      margin: 0.3rem 0;
-      font-size: 0.95rem;
-      color: #ccc;
-    }
+for idx, row in subset.iterrows():
+    col = cols[idx % 4]
 
-    .load-more-container {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
+    with col:
+        st.markdown(
+            f"""
+            <div class="card">
+                <img src="{row['image']}" onerror="this.src='placeholder.png'">
+                <div class="card-title">{row['name']}</div>
+                <div class="card-text">⭐ Rating: {row.get('rating', 'N/A')}</div>
+                <div class="card-text">👥 Reviews: {row.get('numRatings', 0)}</div>
+                <div class="card-text">💰 Price: ₹{row.get('discountPrice', '-')}</div>
+                <div class="card-text"><s>₹{row.get('actualPrice', '-')}</s></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    .load-more {
-      padding: 0.8rem 1.5rem;
-      border: none;
-      border-radius: 6px;
-      background-color: #4CAF50;
-      color: white;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: 0.3s;
-    }
+        # Clickable product link
+        if pd.notna(row.get("link")) and str(row["link"]).strip() != "":
+            st.link_button("View Product", row["link"])
 
-    .load-more:hover {
-      background-color: #66bb6a;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Recommendation Model</h1>
-    <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Search products...">
-      <button onclick="handleSearch()">Search</button>
-    </div>
-  </header>
+        st.write("")
 
-  <main class="cards" id="productContainer"></main>
 
-  <div class="load-more-container">
-    <button class="load-more" id="loadMoreBtn">Load More</button>
-  </div>
-
-  <script>
-    let allProducts = [];
-    let displayedCount = 0;
-    const PRODUCTS_PER_PAGE = 100;
-
-    async function loadProducts() {
-      try {
-        const response = await fetch("all_electronics.csv");
-        const data = await response.text();
-        const rows = data.trim().split("\n").slice(1); // skip header row
-
-        allProducts = rows.map(row => {
-          const cols = row.split(",");
-          return {
-            name: cols[0]?.trim(),
-            image: cols[3]?.trim(),
-            link: cols[4]?.trim(),
-            rating: cols[5]?.trim(),
-            numRatings: cols[6]?.trim(),
-            discountPrice: cols[7]?.trim(),
-            actualPrice: cols[8]?.trim(),
-          };
-        });
-
-        displayProducts();
-      } catch (error) {
-        console.error("Error loading CSV:", error);
-      }
-    }
-
-    function createCard(product) {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <img src="${product.image}" alt="${product.name}"
-             onerror="this.onerror=null;this.src='placeholder.png';">
-        <div class="card-content">
-          <h3>${product.name}</h3>
-          <p>⭐ Rating: ${product.rating || "N/A"}</p>
-          <p>👥 Reviews: ${product.numRatings || "0"}</p>
-          <p>💰 Price: ₹${product.discountPrice || "-"}</p>
-          <p><s>₹${product.actualPrice || "-"}</s></p>
-        </div>
-      `;
-      card.addEventListener("click", () => {
-        if (product.link) window.open(product.link, "_blank");
-      });
-      return card;
-    }
-
-    function displayProducts() {
-      const container = document.getElementById("productContainer");
-      const end = Math.min(displayedCount + PRODUCTS_PER_PAGE, allProducts.length);
-      const productsToShow = allProducts.slice(displayedCount, end);
-
-      productsToShow.forEach(product => {
-        container.appendChild(createCard(product));
-      });
-
-      displayedCount = end;
-      if (displayedCount >= allProducts.length) {
-        document.getElementById("loadMoreBtn").style.display = "none";
-      }
-    }
-
-    function handleSearch() {
-      const query = document.getElementById("searchInput").value.toLowerCase();
-      const container = document.getElementById("productContainer");
-      container.innerHTML = "";
-
-      const filtered = allProducts.filter(p =>
-        p.name.toLowerCase().includes(query)
-      );
-
-      filtered.forEach(product => {
-        container.appendChild(createCard(product));
-      });
-
-      document.getElementById("loadMoreBtn").style.display = "none";
-    }
-
-    document.getElementById("loadMoreBtn").addEventListener("click", displayProducts);
-    loadProducts();
-  </script>
-</body>
-</html>
+# -----------------------------
+# Load More Button
+# -----------------------------
+if st.session_state.count < len(df):
+    if st.button("Load More"):
+        st.session_state.count += PRODUCTS_PER_PAGE
+        st.rerun()
