@@ -1,120 +1,127 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Product Details</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: url("background1.jpg") no-repeat center center fixed;
-      background-size: cover;
-      color: #fff;
-      position: relative;
-    }
+import streamlit as st
+from urllib.parse import unquote
 
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.6);
-      z-index: -1;
-    }
+# -----------------------------
+# Page Config
+# -----------------------------
+st.set_page_config(page_title="Product Details", layout="centered")
 
-    .container {
-      max-width: 800px;
-      margin: 3rem auto;
-      background-color: rgba(17, 17, 17, 0.85);
-      border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(255,255,255,0.1);
-      overflow: hidden;
-    }
+# -----------------------------
+# Background Styling
+# -----------------------------
+bg_style = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background: url("background1.jpg");
+    background-size: cover;
+}
+[data-testid="stAppViewContainer"]::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: -1;
+}
+.container {
+    background-color: rgba(17, 17, 17, 0.85);
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 10px rgba(255,255,255,0.1);
+}
+.product-img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+h1 {
+    color: white;
+}
+p {
+    color: #ccc;
+}
+.price {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+}
+.discounted {
+    color: #4caf50;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+.actual {
+    text-decoration: line-through;
+    color: #999;
+    margin-left: 10px;
+}
+.back-btn {
+    background: white;
+    color: black;
+    padding: 0.8rem 1.4rem;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+}
+</style>
+"""
+st.markdown(bg_style, unsafe_allow_html=True)
 
-    .product-image img {
-      width: 100%;
-      height: 400px;
-      object-fit: cover;
-    }
+# -----------------------------
+# Read URL Query Params
+# -----------------------------
+query_params = st.query_params
 
-    .product-details {
-      padding: 2rem;
-    }
+# Decode URL-encoded text safely
+def get_param(key, default=""):
+    return unquote(query_params.get(key, [default])[0])
 
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
+product = {
+    "name": get_param("name"),
+    "image": get_param("image"),
+    "rating": get_param("rating"),
+    "reviews": get_param("reviews"),
+    "discounted": get_param("discounted"),
+    "actual": get_param("actual"),
+    "description": get_param("description"),
+}
 
-    p {
-      margin: 0.5rem 0;
-      color: #ccc;
-      font-size: 1rem;
-    }
+# -----------------------------
+# Display Product Details
+# -----------------------------
+st.markdown("<div class='container'>", unsafe_allow_html=True)
 
-    .price {
-      margin-top: 1rem;
-      font-size: 1.2rem;
-    }
+if product["name"]:
+    # Product Image
+    st.markdown(
+        f"<img src='{product['image']}' class='product-img'>",
+        unsafe_allow_html=True
+    )
 
-    .discounted {
-      color: #4caf50;
-      font-weight: bold;
-      font-size: 1.5rem;
-    }
+    # Product Info
+    st.markdown(f"## {product['name']}")
+    st.markdown(f"⭐ {product['rating']} ({product['reviews']} reviews)")
 
-    .actual {
-      text-decoration: line-through;
-      color: #999;
-      margin-left: 0.8rem;
-    }
-
-    .back-btn {
-      display: block;
-      margin: 1.5rem auto;
-      background-color: #fff;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      padding: 0.8rem 1.5rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .back-btn:hover {
-      background-color: #ddd;
-    }
-  </style>
-</head>
-<body>
-  <div class="container" id="productContainer"></div>
-  <button class="back-btn" onclick="window.location.href='index.html'">← Back to Products</button>
-
-  <script>
-    const container = document.getElementById('productContainer');
-    const productData = JSON.parse(localStorage.getItem('selectedProduct'));
-
-    if (productData) {
-      container.innerHTML = `
-        <div class="product-image">
-          <img src="${productData.image_url}" alt="${productData.name}">
+    st.markdown(
+        f"""
+        <div class='price'>
+            <span class='discounted'>{product['discounted']}</span>
+            <span class='actual'>{product['actual']}</span>
         </div>
-        <div class="product-details">
-          <h1>${productData.name}</h1>
-          <p>⭐ ${productData.rating || 'N/A'} (${productData.reviews || '0'} reviews)</p>
-          <div class="price">
-            <span class="discounted">${productData.discounted_price || ''}</span>
-            <span class="actual">${productData.actual_price || ''}</span>
-          </div>
-          <p style="margin-top:1rem;">${productData.description || ''}</p>
-        </div>
-      `;
-    } else {
-      container.innerHTML = `<p style="text-align:center;padding:2rem;">No product data found.</p>`;
-    }
-  </script>
-</body>
-</html>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.write(product["description"])
+
+else:
+    st.write("### ❌ No product data available.")
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# -----------------------------
+# Back Button
+# -----------------------------
+st.page_link("index.py", label="← Back to Products", icon="↩️")
