@@ -153,7 +153,7 @@
       try {
         const response = await fetch("all_electronics.csv");
         const data = await response.text();
-        const rows = data.trim().split("\n").slice(1); // skip header row
+        const rows = data.trim().split("\n").slice(1);
 
         allProducts = rows.map(row => {
           const cols = row.split(",");
@@ -183,7 +183,6 @@
         <div class="card-content">
           <h3>${product.name}</h3>
           <p>⭐ Rating: ${product.rating || "N/A"}</p>
-          <p>👥 Reviews: ${product.numRatings || "0"}</p>
           <p>💰 Price: ₹${product.discountPrice || "-"}</p>
           <p><s>₹${product.actualPrice || "-"}</s></p>
         </div>
